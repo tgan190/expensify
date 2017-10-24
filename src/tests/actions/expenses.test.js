@@ -1,6 +1,7 @@
 import configureMockStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
-import { startAddExpense, addExpense, editExpense, removeExpense, startSetExpenses} from '../../actions/expenses';
+import { startAddExpense, addExpense, editExpense, removeExpense, startSetExpenses,
+       startRemoveExpense} from '../../actions/expenses';
 import expenses from '../fixtures/expenses';
 import database from '../../firebase/firebase';
 
@@ -11,7 +12,7 @@ beforeEach((done) => {
   expenses.forEach(({ id, description, note, amount, createdAt }) => {
     expensesData[id] = { description, note, amount, createdAt };
   });
-    console.log('expensesData: ',expensesData);
+    // console.log('expensesData: ',expensesData);
   database.ref('expenses').set(expensesData).then(() => done());
 });
 
@@ -22,6 +23,47 @@ test('should setup remove expense action object', () => {
     id: '123abc'
   });
 });
+
+test('should remove expenses from firebase', (done) => {
+  const store = createMockStore({});
+    const id = expenses[2].id;
+    store.dispatch(startRemoveExpense({id})).then(() => {
+      const actions = store.getActions();
+      expect(actions[0]).toEqual({
+        type: 'REMOVE_EXPENSE',
+        id
+      });
+       // console.log('after first expect');
+      return database.ref(`expenses/${id}`).once('value');
+    }).then((snapshot) => {
+       // expect(snapshot.val()).toBe(null);
+        expect(snapshot.val()).toBeFalsy();
+        // console.log('after toBe null');
+        done();
+    });
+
+});
+
+
+/*
+test('should remove expenses from firebase', (done) => {
+  const store = createMockStore({});
+    const id = expenses[0].id;
+    
+    store.dispatch(startRemoveExpense({id})).then(() => {
+      const actions = store.getActions();
+      expect(actions[0]).toEqual({
+        type: 'REMOVE_EXPENSE',
+        id
+      });
+       
+      //return database.ref(`expenses/${id}`).once('value');
+        done();
+       
+    })
+
+});
+*/
 
 test('should setup edit expense action object', () => {
   const action = editExpense('123abc', { note: 'New note value' });
@@ -119,7 +161,6 @@ test('should fetch expenses from firebase', (done) => {
   });
 });
     
-
 
 
 
